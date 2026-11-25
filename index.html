@@ -46,6 +46,26 @@
   </script>
 
   <style>
+     .rope {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.rope polyline {
+  fill: none;
+  stroke: #7c5cff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rope .head {
+  fill: #7c5cff;
+}
     @media (max-width: 640px) {
   header {
     flex-wrap: wrap;
@@ -150,6 +170,10 @@
   </style>
 </head>
 <body class="bg-ivory text-ink overflow-x-hidden">
+   <svg class="rope" id="rope" aria-hidden="true">
+  <polyline id="ropeLine" points=""></polyline>
+  <circle id="ropeHead" class="head" r="5" cx="-20" cy="-20"></circle>
+</svg>
 
   <!-- ===================================================================== -->
   <!-- 1. MINIMAL STICKY TOP BAR                                             -->
@@ -1278,6 +1302,62 @@ if (headerEl) {
         setTimeout(applyModeOne, 150);
       });
     })();
+     (function () {
+  var line = document.getElementById('ropeLine');
+  var head = document.getElementById('ropeHead');
+  if (!line || !head) return;
+
+  var SEGMENTS = 18;
+  // Per-segment lag in ms. Frame-rate independent, so the rope has the same
+  // slack at 60Hz and 144Hz instead of snapping tight on fast displays.
+  var SEG_TAU = 38;
+
+  var pts = [];
+  for (var i = 0; i < SEGMENTS; i++) pts.push({ x: -20, y: -20 });
+
+  var targetX = -20, targetY = -20, started = false;
+
+  function moveTo(x, y) {
+    targetX = x;
+    targetY = y;
+    if (!started) {
+      // Snap the whole rope to the first point so it doesn't whip in from a corner
+      pts.forEach(function (p) { p.x = x; p.y = y; });
+      started = true;
+    }
+  }
+
+  window.addEventListener('pointermove', function (e) { moveTo(e.clientX, e.clientY); });
+  window.addEventListener('touchmove', function (e) {
+    var t = e.touches[0];
+    if (t) moveTo(t.clientX, t.clientY);
+  }, { passive: true });
+
+  var last = 0;
+
+  function tick(now) {
+    var dt = last ? Math.min(now - last, 64) : 16.7;
+    last = now;
+    var a = 1 - Math.exp(-dt / SEG_TAU);
+
+    // Head is pinned to the cursor; each segment chases the one before it
+    pts[0].x = targetX;
+    pts[0].y = targetY;
+    for (var i = 1; i < SEGMENTS; i++) {
+      pts[i].x += (pts[i - 1].x - pts[i].x) * a;
+      pts[i].y += (pts[i - 1].y - pts[i].y) * a;
+    }
+
+    line.setAttribute('points', pts.map(function (p) {
+      return p.x.toFixed(1) + ',' + p.y.toFixed(1);
+    }).join(' '));
+    head.setAttribute('cx', targetX);
+    head.setAttribute('cy', targetY);
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
     </script>
 </body>
 </html>
