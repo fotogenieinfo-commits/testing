@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FOTOGENIE — Metro Station Photobooth</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans, Inter, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Plus Jakarta Sans"', 'sans-serif'],
+            sans: ['"Inter"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            crimson: {
+              DEFAULT: '#D91419',
+              hover: '#B80F14',
+            },
+            optic: '#00A8E8',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* =====================================================================
+       60-30-10 COLOR TOKENS (DARK & LIGHT THEMES)
+       60% Neutral Surface | 30% Structural Crimson & Ink | 10% Optical Accent
+    ====================================================================== */
+    :root,
+    [data-theme="dark"] {
+      --bg-primary: #0B0B0D;
+      --bg-secondary: #121216;
+      --bg-elevated: #18181E;
+      --border-hairline: #24242C;
+      --text-primary: #F4F4F6;
+      --text-secondary: #A1A1AA;
+      --text-muted: #6E6E78;
+      --hero-scrim-top: rgba(11, 11, 13, 0.58);
+      --hero-scrim-bottom: #0B0B0D;
+      --reel-base: #101013;
+      --reel-edge: #26262E;
+      --reel-hole: #070709;
+      --reel-ink: #8E8E99;
+      --strip-paper: #EFECE6;
+      --strip-ink: #111114;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #F6F5F2;
+      --bg-secondary: #ECEAE4;
+      --bg-elevated: #FFFFFF;
+      --border-hairline: #DCD9D0;
+      --text-primary: #111114;
+      --text-secondary: #4B4B53;
+      --text-muted: #787882;
+      --hero-scrim-top: rgba(11, 11, 13, 0.48);
+      --hero-scrim-bottom: #F6F5F2;
+      --reel-base: #18181C;
+      --reel-edge: #2E2E36;
+      --reel-hole: #F6F5F2;
+      --reel-ink: #A1A1AA;
+      --strip-paper: #FFFFFF;
+      --strip-ink: #111114;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.28s ease, color 0.28s ease;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .surface-primary {
+      background-color: var(--bg-primary);
+      transition: background-color 0.28s ease;
+    }
+
+    .surface-secondary {
+      background-color: var(--bg-secondary);
+      transition: background-color 0.28s ease;
+    }
+
+    .surface-elevated {
+      background-color: var(--bg-elevated);
+      transition: background-color 0.28s ease;
+    }
+
+    .border-theme {
+      border-color: var(--border-hairline);
+      transition: border-color 0.28s ease;
+    }
+
+    .text-theme-primary {
+      color: var(--text-primary);
+    }
+
+    .text-theme-secondary {
+      color: var(--text-secondary);
+    }
+
+    .text-theme-muted {
+      color: var(--text-muted);
+    }
+
+    /* Full-bleed Hero Scrim so Title Remains Crisp Over Any Photo */
+    .hero-scrim {
+      background: linear-gradient(
+        to bottom,
+        var(--hero-scrim-top) 0%,
+        rgba(11, 11, 13, 0.55) 60%,
+        var(--hero-scrim-bottom) 100%
+      );
+    }
+
+    /* =====================================================================
+       CONTINUOUS 35MM CELLULOID FILM REEL BORDERS (SECTION 2 TO BOTTOM)
+       Starts at the top edge of #post-hero-wrapper and runs to page end
+    ====================================================================== */
+    .celluloid-rail {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 24px;
+      background-color: var(--reel-base);
+      border-color: var(--reel-edge);
+      overflow: hidden;
+      z-index: 15;
+      pointer-events: none;
+      transition: background-color 0.28s ease, border-color 0.28s ease;
+    }
+
+    @media (min-width: 768px) {
+      .celluloid-rail {
+        width: 78px;
+      }
+    }
+
+    @media (min-width: 1280px) {
+      .celluloid-rail {
+        width: 96px;
+      }
+    }
+
+    .celluloid-rail-left {
+      left: 0;
+      border-right-width: 1px;
+    }
+
+    .celluloid-rail-right {
+      right: 0;
+      border-left-width: 1px;
+    }
+
+    /* Authentic 35mm Sprocket Perforation Columns */
+    .sprocket-column {
+      position: absolute;
+      top: -120px;
+      bottom: -120px;
+      width: 7px;
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 8px,
+        var(--reel-hole) 8px,
+        var(--reel-hole) 17px,
+        transparent 17px,
+        transparent 26px
+      );
+      will-change: transform;
+    }
+
+    @media (min-width: 768px) {
+      .sprocket-column {
+        width: 9px;
+      }
+    }
+
+    /* Inner Reel Track Holding Frame Numbers & Editable 35mm Cells */
+    .reel-track {
+      position: absolute;
+      top: -160px;
+      left: 11px;
+      right: 11px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      will-change: transform;
+    }
+
+    @media (min-width: 768px) {
+      .reel-track {
+        display: flex;
+        left: 14px;
+        right: 14px;
+      }
+    }
+
+    .reel-cell {
+      border: 1px solid #2C2C35;
+      border-radius: 3px;
+      background-color: #070709;
+      padding: 3px;
+    }
+
+    .reel-cell-img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 2px;
+      display: block;
+      filter: contrast(1.06) saturate(0.92);
+    }
+
+    .reel-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.08em;
+      color: var(--reel-ink);
+      display: flex;
+      justify-content: space-between;
+      padding-top: 3px;
+    }
+
+    /* Tactile Printed Photo Strip Card in Section 2 */
+    .printed-strip {
+      background-color: var(--strip-paper);
+      color: var(--strip-ink);
+      transition: background-color 0.28s ease, color 0.28s ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sprocket-column,
+      .reel-track {
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="selection:bg-crimson selection:text-white">
+
+  <!-- =====================================================================
+       MINIMAL FIXED / OVERLAY HEADER WITH LIGHT & DARK THEME TOGGLE
+  ====================================================================== -->
+  <header id="site-header" class="fixed top-0 inset-x-0 z-40 transition-colors duration-300 border-b border-white/10 bg-black/35 backdrop-blur-md">
+    <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+      <!-- Brand Mark -->
+      <a href="#hero" class="flex items-center gap-2.5 text-white">
+        <span class="w-2.5 h-2.5 rounded-full bg-crimson"></span>
+        <span class="font-display font-bold text-base tracking-wider uppercase">FOTOGENIEL</span>
+      </a>
+
+      <!-- Minimal Section Links -->
+      <nav aria-label="Primary Navigation" class="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-widest text-white/80">
+        <a href="#concept" class="hover:text-white transition-colors">01 Concept</a>
+        <a href="#specs" class="hover:text-white transition-colors">02 Specs</a>
+        <a href="#stations" class="hover:text-white transition-colors">03 Stations</a>
+      </nav>
+
+      <!-- Light / Dark Theme Toggle -->
+      <div class="flex items-center gap-3">
+        <button
+          id="theme-toggle"
+          type="button"
+          onclick="toggleTheme()"
+          aria-label="Toggle Light and Dark Theme"
+          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white font-mono text-[11px] tracking-wide transition-colors"
+        >
+          <!-- Sun Icon (shown in dark mode to switch to light) -->
+          <svg id="icon-sun" class="w-3.5 h-3.5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+          </svg>
+          <!-- Moon Icon (shown in light mode to switch to dark) -->
+          <svg id="icon-moon" class="w-3.5 h-3.5 text-sky-300 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span id="theme-toggle-label">Light</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =====================================================================
+       SECTION 01 — FULL-BLEED HERO BANNER WITH BIG BACKGROUND IMAGE & TITLE
+  ====================================================================== -->
+  <section id="hero" class="relative min-h-screen w-full flex items-end pb-16 sm:pb-24 pt-28 overflow-hidden bg-[#0B0B0D]">
+
+    <!-- REPLACE HERO BACKGROUND IMAGE SRC HERE -->
+    <img
+    id="hero-bg-image"
+    src="images/banner.jpg"
+    alt="Metro station platform and photobooth pod"
+    class="absolute inset-0 w-full h-full object-cover object-center opacity-75"
+  />
+
+    <!-- Editorial Gradient Scrim -->
+    <div class="hero-scrim absolute inset-0"></div>
+
+    <!-- Hero Content Container -->
+    <div class="relative z-10 max-w-5xl mx-auto px-6 w-full">
+      <div class="max-w-3xl space-y-6">
+        <div class="inline-flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-white/85">
+          <span class="w-6 h-[2px] bg-crimson"></span>
+          <span>METRO CONCOURSE PORTRAITURE</span>
+        </div>
+
+        <!-- Big Display Title on Banner -->
+        <h1 class="font-display font-extrabold text-5xl sm:text-7xl md:text-8xl tracking-tight leading-[0.96] text-white uppercase">
+          FOTOGENIE
+        </h1>
+
+        <p class="font-display font-medium text-xl sm:text-2xl text-white/90 max-w-xl leading-snug">
+          Studio-grade 35mm portrait kiosks built quietly into the architecture of underground transit.
+        </p>
+
+        <div class="pt-2 flex flex-wrap items-center gap-4">
+          <a href="#concept" class="px-6 py-3.5 rounded-md bg-crimson hover:bg-crimson-hover text-white font-medium text-sm tracking-wide transition-colors">
+            Explore the Booth
+          </a>
+          <a href="#stations" class="px-6 py-3.5 rounded-md border border-white/25 bg-black/30 hover:bg-black/50 text-white font-mono text-xs uppercase tracking-wider transition-colors">
+            Station Directory
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       POST-HERO WRAPPER (SECTION 2 TO PAGE BOTTOM)
+       LEFT & RIGHT 35MM CELLULOID FILM REEL BORDERS START HERE & END AT BOTTOM
+  ====================================================================== -->
+  <div id="post-hero-wrapper" class="relative surface-primary">
+
+<!-- LEFT 35MM CELLULOID FILM REEL BORDER (STARTS AT SECTION 2, ENDS AT BOTTOM) -->
+<aside aria-hidden="true" class="celluloid-rail celluloid-rail-left border-theme">
+  <!-- Outer & Inner Left Sprocket Holes -->
+  <div class="sprocket-column left-[3px] md:left-[4px]" data-sprocket-dir="1"></div>
+  <div class="sprocket-column right-[3px] md:right-[4px]" data-sprocket-dir="1"></div>
+
+  <!-- Editable 35mm Celluloid Frames (Left Border) -->
+  <div id="reel-track-left" class="reel-track">
+    <!-- REPLACE LEFT REEL FRAME IMAGES BELOW -->
+    <div class="reel-cell">
+      <img data-reel-frame="L1" src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=480&q=80" alt="Studio group friends smiling 01A" class="reel-cell-img" />
+      <div class="reel-meta"><span>01A</span><span>400TX</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="L2" src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=480&q=80" alt="Group studio portrait 02A" class="reel-cell-img" />
+      <div class="reel-meta"><span>02A</span><span>400TX</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="L3" src="https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=480&q=80" alt="Friends laughing together 03A" class="reel-cell-img" />
+      <div class="reel-meta"><span>03A</span><span>400TX</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="L4" src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=480&q=80" alt="Creative crew portrait 04A" class="reel-cell-img" />
+      <div class="reel-meta"><span>04A</span><span>400TX</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="L5" src="https://images.unsplash.com/photo-1539635278303-d4002c07eae3?auto=format&fit=crop&w=480&q=80" alt="Group celebration shot 05A" class="reel-cell-img" />
+      <div class="reel-meta"><span>05A</span><span>400TX</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="L6" src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=480&q=80" alt="Friends posing together 06A" class="reel-cell-img" />
+      <div class="reel-meta"><span>06A</span><span>400TX</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="L7" src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=480&q=80" alt="Studio team candid 07A" class="reel-cell-img" />
+      <div class="reel-meta"><span>07A</span><span>400TX</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="L8" src="https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=480&q=80" alt="Group booth flash shot 08A" class="reel-cell-img" />
+      <div class="reel-meta"><span>08A</span><span>400TX</span></div>
+    </div>
+  </div>
+</aside>
+
+<!-- RIGHT 35MM CELLULOID FILM REEL BORDER (STARTS AT SECTION 2, ENDS AT BOTTOM) -->
+<aside aria-hidden="true" class="celluloid-rail celluloid-rail-right border-theme">
+  <!-- Outer & Inner Right Sprocket Holes -->
+  <div class="sprocket-column left-[3px] md:left-[4px]" data-sprocket-dir="-1"></div>
+  <div class="sprocket-column right-[3px] md:right-[4px]" data-sprocket-dir="-1"></div>
+
+  <!-- Editable 35mm Celluloid Frames (Right Border) -->
+  <div id="reel-track-right" class="reel-track">
+    <!-- REPLACE RIGHT REEL FRAME IMAGES BELOW -->
+    <div class="reel-cell">
+      <img data-reel-frame="R1" src="https://images.unsplash.com/photo-1511988617509-a57c8a288659?auto=format&fit=crop&w=480&q=80" alt="Friends group huddle 01B" class="reel-cell-img" />
+      <div class="reel-meta"><span>01B</span><span>FLASH</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="R2" src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=480&q=80" alt="Studio group portrait 02B" class="reel-cell-img" />
+      <div class="reel-meta"><span>02B</span><span>FLASH</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="R3" src="https://images.unsplash.com/photo-1542037104857-ffbb0b9155fb?auto=format&fit=crop&w=480&q=80" alt="Group candid laughter 03B" class="reel-cell-img" />
+      <div class="reel-meta"><span>03B</span><span>FLASH</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="R4" src="https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=480&q=80" alt="Celebration group flash 04B" class="reel-cell-img" />
+      <div class="reel-meta"><span>04B</span><span>FLASH</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="R5" src="https://images.unsplash.com/photo-1506869640319-fe1a24fd76dc?auto=format&fit=crop&w=480&q=80" alt="Friends together portrait 05B" class="reel-cell-img" />
+      <div class="reel-meta"><span>05B</span><span>FLASH</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="R6" src="https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&w=480&q=80" alt="Group studio moment 06B" class="reel-cell-img" />
+      <div class="reel-meta"><span>06B</span><span>FLASH</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="R7" src="https://images.unsplash.com/photo-1525026198548-4baa812f1183?auto=format&fit=crop&w=480&q=80" alt="Friends posing in booth 07B" class="reel-cell-img" />
+      <div class="reel-meta"><span>07B</span><span>FLASH</span></div>
+    </div>
+    <div class="reel-cell">
+      <img data-reel-frame="R8" src="https://images.unsplash.com/photo-1516575334481-f85287c2c82d?auto=format&fit=crop&w=480&q=80" alt="Studio group strip 08B" class="reel-cell-img" />
+      <div class="reel-meta"><span>08B</span><span>FLASH</span></div>
+    </div>
+  </div>
+</aside>
+
+    <!-- ===================================================================
+         MAIN INTERIOR CONTENT COLUMN (CLEAR OF LEFT & RIGHT FILM REELS)
+    ==================================================================== -->
+    <main class="px-9 sm:px-12 md:px-28 lg:px-32">
+
+      <!-- =================================================================
+           SECTION 02 — THE CONCEPT & ARCHIVAL 4-FRAME PHOTO STRIP
+      ================================================================== -->
+      <section id="concept" class="max-w-4xl mx-auto py-20 sm:py-28 border-t border-theme">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
+
+          <!-- Left Editorial Narrative -->
+          <div class="lg:col-span-7 space-y-6">
+            <div class="font-mono text-xs uppercase tracking-[0.18em] text-crimson">
+              01 // THE CONCEPT
+            </div>
+
+            <h2 class="font-display font-bold text-3xl sm:text-4xl tracking-tight leading-tight text-theme-primary">
+              An unhurried studio pause between train arrivals.
+            </h2>
+
+            <p class="text-base text-theme-secondary leading-relaxed">
+              FOTOGENIE replaces harsh station fluorescent lighting and cluttered arcade booths with a brushed steel architectural enclosure. Step inside off the concourse, tap your transit card, and leave in under twenty seconds with a tactile four-frame silver-halide-style print.
+            </p>
+
+            <div class="grid grid-cols-3 gap-6 pt-6 border-t border-theme">
+              <div>
+                <div class="font-display font-bold text-2xl text-theme-primary">8.0s</div>
+                <div class="font-mono text-[11px] text-theme-muted mt-1">Dry thermal print</div>
+              </div>
+              <div>
+                <div class="font-display font-bold text-2xl text-theme-primary">CRI 98</div>
+                <div class="font-mono text-[11px] text-theme-muted mt-1">Diffused ring light</div>
+              </div>
+              <div>
+                <div class="font-display font-bold text-2xl text-theme-primary">4-Cut</div>
+                <div class="font-mono text-[11px] text-theme-muted mt-1">Archival matte strip</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Authentic 4-Frame Printed Photo Strip -->
+          <div class="lg:col-span-5 flex justify-center">
+            <div class="printed-strip w-60 p-3.5 rounded-lg shadow-2xl border border-black/10">
+              <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-black/15 font-mono text-[9px] tracking-widest uppercase">
+                <span class="font-bold text-crimson">FOTOGENIE</span>
+                <span>CENTRAL B2</span>
+              </div>
+
+              <!-- EDITABLE 4-FRAME PHOTO STRIP IMAGES -->
+              <div class="space-y-2">
+                <div class="aspect-[4/3] bg-zinc-900 overflow-hidden rounded-[2px]">
+                  <img data-strip-frame="1" <img src="images/frame1.jpg" alt="Description of photo" class="w-full h-full object-cover" />
+                </div>
+                <div class="aspect-[4/3] bg-zinc-900 overflow-hidden rounded-[2px]">
+                  <img data-strip-frame="2" <img src="images/frame2.jpg" alt="Photo strip frame 2" class="w-full h-full object-cover" />
+                </div>
+                <div class="aspect-[4/3] bg-zinc-900 overflow-hidden rounded-[2px]">
+                  <img data-strip-frame="3" <img src="images/frame3.jpg" alt="Photo strip frame 3" class="w-full h-full object-cover" />
+                </div>
+                <div class="aspect-[4/3] bg-zinc-900 overflow-hidden rounded-[2px]">
+                  <img data-strip-frame="4" <img src="images/frame4.jpg" alt="Photo strip frame 4" class="w-full h-full object-cover" />
+                </div>
+              </div>
+
+              <div class="pt-2.5 mt-2.5 border-t border-black/15 flex items-center justify-between font-mono text-[9px] tracking-wider opacity-75">
+                <span>35MM PRIME</span>
+                <span>24 NOV 2026</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SECTION 03 — ENGINEERING & PRINT SPECIFICATIONS (SWISS GRID)
+      ================================================================== -->
+      <section id="specs" class="max-w-4xl mx-auto py-20 sm:py-28 border-t border-theme">
+        <div class="max-w-xl mb-12">
+          <div class="font-mono text-xs uppercase tracking-[0.18em] text-crimson mb-2">
+            02 // HARDWARE & OPTICS
+          </div>
+          <h2 class="font-display font-bold text-3xl sm:text-4xl tracking-tight text-theme-primary">
+            Engineered for transit durability.
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Spec 1 -->
+          <div class="surface-secondary border border-theme rounded-xl p-6 space-y-4">
+            <div class="flex items-center justify-between font-mono text-xs text-theme-muted">
+              <span class="text-crimson">01</span>
+              <span>OPTICS</span>
+            </div>
+            <h3 class="font-display font-semibold text-lg text-theme-primary">
+              Full-Frame Prime & CRI 98 Ring
+            </h3>
+            <p class="text-sm text-theme-secondary leading-relaxed">
+              Fixed 35mm f/2.8 glass paired with a calibrated 4800K soft diffuser eliminates harsh overhead station shadows.
+            </p>
+          </div>
+
+          <!-- Spec 2 -->
+          <div class="surface-secondary border border-theme rounded-xl p-6 space-y-4">
+            <div class="flex items-center justify-between font-mono text-xs text-theme-muted">
+              <span class="text-crimson">02</span>
+              <span>OUTPUT</span>
+            </div>
+            <h3 class="font-display font-semibold text-lg text-theme-primary">
+              8-Second Archival Dye-Sub
+            </h3>
+            <p class="text-sm text-theme-secondary leading-relaxed">
+              Smudge-proof matte overcoat applied immediately after printing, plus an optional QR digital copy on the reverse.
+            </p>
+          </div>
+
+          <!-- Spec 3 -->
+          <div class="surface-secondary border border-theme rounded-xl p-6 space-y-4">
+            <div class="flex items-center justify-between font-mono text-xs text-theme-muted">
+              <span class="text-crimson">03</span>
+              <span>ACCESS</span>
+            </div>
+            <h3 class="font-display font-semibold text-lg text-theme-primary">
+              Tap-to-Pay & Acoustic Baffles
+            </h3>
+            <p class="text-sm text-theme-secondary leading-relaxed">
+              Accepts contactless cards, mobile wallets, and metro transit passes inside a -28 dB felt-lined steel alcove.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SECTION 04 — STATION LOCATIONS & TRANSPARENT PRICING
+      ================================================================== -->
+      <section id="stations" class="max-w-4xl mx-auto py-20 sm:py-28 border-t border-theme">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+
+          <!-- Left: Minimal Station Directory Table (8 Cols) -->
+          <div class="lg:col-span-8 space-y-6">
+            <div>
+              <div class="font-mono text-xs uppercase tracking-[0.18em] text-crimson mb-2">
+                03 // STATION DIRECTORY
+              </div>
+              <h2 class="font-display font-bold text-3xl tracking-tight text-theme-primary">
+                Active Concourse Pods
+              </h2>
+            </div>
+
+            <div class="divide-y border-y border-theme">
+              <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div class="font-display font-semibold text-base text-theme-primary">Central Interchange</div>
+                  <div class="font-mono text-xs text-theme-muted">Concourse B2 • Near Gate B4</div>
+                </div>
+                <div class="flex items-center gap-4 font-mono text-xs">
+                  <span class="text-theme-secondary">05:30 – 00:30</span>
+                  <span class="inline-flex items-center gap-1.5 text-optic">
+                    <span class="w-1.5 h-1.5 rounded-full bg-optic"></span>
+                    ONLINE
+                  </span>
+                </div>
+              </div>
+
+              <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div class="font-display font-semibold text-base text-theme-primary">North Exchange</div>
+                  <div class="font-mono text-xs text-theme-muted">Upper Mezzanine • Exit N2</div>
+                </div>
+                <div class="flex items-center gap-4 font-mono text-xs">
+                  <span class="text-theme-secondary">06:00 – 23:30</span>
+                  <span class="inline-flex items-center gap-1.5 text-optic">
+                    <span class="w-1.5 h-1.5 rounded-full bg-optic"></span>
+                    ONLINE
+                  </span>
+                </div>
+              </div>
+
+              <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div class="font-display font-semibold text-base text-theme-primary">West Arcade</div>
+                  <div class="font-mono text-xs text-theme-muted">Platform Link • Pillar 09</div>
+                </div>
+                <div class="flex items-center gap-4 font-mono text-xs">
+                  <span class="text-theme-secondary">06:00 – 00:00</span>
+                  <span class="inline-flex items-center gap-1.5 text-optic">
+                    <span class="w-1.5 h-1.5 rounded-full bg-optic"></span>
+                    ONLINE
+                  </span>
+                </div>
+              </div>
+
+              <div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div class="font-display font-semibold text-base text-theme-primary">Terminal Link</div>
+                  <div class="font-mono text-xs text-theme-muted">Rail Corridor • Arrivals Bay 01</div>
+                </div>
+                <div class="flex items-center gap-4 font-mono text-xs">
+                  <span class="text-theme-secondary">24 HOURS</span>
+                  <span class="inline-flex items-center gap-1.5 text-optic">
+                    <span class="w-1.5 h-1.5 rounded-full bg-optic"></span>
+                    ONLINE
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Simple Session Rates Card (4 Cols) -->
+          <div class="lg:col-span-4 surface-secondary border border-theme rounded-xl p-6 space-y-6">
+            <div class="font-mono text-xs uppercase tracking-widest text-crimson">
+              SESSION RATES
+            </div>
+
+            <div class="space-y-4 divide-y border-theme">
+              <div class="pb-4 flex items-baseline justify-between">
+                <div>
+                  <div class="font-display font-semibold text-base text-theme-primary">Single Strip</div>
+                  <div class="font-mono text-[11px] text-theme-muted">1 physical print + digital QR</div>
+                </div>
+                <div class="font-display font-bold text-2xl text-theme-primary">$5</div>
+              </div>
+
+              <div class="pt-4 flex items-baseline justify-between">
+                <div>
+                  <div class="font-display font-semibold text-base text-theme-primary">Twin Cut</div>
+                  <div class="font-mono text-[11px] text-theme-muted">2 identical strips + digital QR</div>
+                </div>
+                <div class="font-display font-bold text-2xl text-crimson">$8</div>
+              </div>
+            </div>
+
+            <p class="font-mono text-[11px] text-theme-muted leading-relaxed">
+              No app download required. Tap contactless card or metro pass directly at the booth.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- =================================================================
+           CLEAN FOOTER (CELLULOID REELS TERMINATE AT BOTTOM OF THIS SECTION)
+      ================================================================== -->
+      <footer class="max-w-4xl mx-auto py-12 border-t border-theme flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2 h-2 rounded-full bg-crimson"></span>
+          <span class="font-display font-bold text-sm tracking-wider uppercase text-theme-primary">FOTOGENIE</span>
+          <span class="font-mono text-xs text-theme-muted ml-2">© 2026</span>
+        </div>
+
+        <div class="font-mono text-xs text-theme-muted">
+          35MM TRANSIT PORTRAITURE • ARCHITECTURAL KIOSK SERIES
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- =====================================================================
+       MINIMAL THEME TOGGLE & SCROLL-DRIVEN CELLULOID FILM REEL SCRIPT
+  ====================================================================== -->
+  <script>
+    // 1. Light & Dark Theme Toggle with LocalStorage Persistence
+    const htmlEl = document.documentElement;
+    const themeLabel = document.getElementById('theme-toggle-label');
+    const iconSun = document.getElementById('icon-sun');
+    const iconMoon = document.getElementById('icon-moon');
+
+    function applyTheme(theme) {
+      htmlEl.setAttribute('data-theme', theme);
+      try {
+        localStorage.setItem('FOTOGENIE-theme', theme);
+      } catch (e) {}
+
+      if (theme === 'light') {
+        themeLabel.textContent = 'Dark';
+        iconSun.classList.add('hidden');
+        iconMoon.classList.remove('hidden');
+      } else {
+        themeLabel.textContent = 'Light';
+        iconMoon.classList.add('hidden');
+        iconSun.classList.remove('hidden');
+      }
+    }
+
+    function toggleTheme() {
+      const current = htmlEl.getAttribute('data-theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+
+    // Initialize saved theme
+    (function initTheme() {
+      let saved = 'dark';
+      try {
+        saved = localStorage.getItem('FOTOGENIE-theme') || 'dark';
+      } catch (e) {}
+      applyTheme(saved);
+    })();
+
+    // 2. Smooth Scroll-Driven 35mm Celluloid Reel Motion (Section 2 to Bottom)
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const postHeroWrapper = document.getElementById('post-hero-wrapper');
+    const leftTrack = document.getElementById('reel-track-left');
+    const rightTrack = document.getElementById('reel-track-right');
+    const sprocketCols = document.querySelectorAll('.sprocket-column');
+
+    let ticking = false;
+
+    function updateCelluloidReels() {
+      ticking = false;
+      if (prefersReducedMotion || !postHeroWrapper) return;
+
+      const rect = postHeroWrapper.getBoundingClientRect();
+      // Measure how far the user has scrolled past the start of Section 2
+      const scrolledInPostHero = Math.max(0, window.innerHeight - rect.top);
+
+      // Gentle vertical film advance proportional to scroll
+      const leftOffset = -(scrolledInPostHero * 0.14) % 240;
+      const rightOffset = -(scrolledInPostHero * 0.18) % 240;
+
+      if (leftTrack) {
+        leftTrack.style.transform = `translate3d(0, ${leftOffset.toFixed(1)}px, 0)`;
+      }
+      if (rightTrack) {
+        rightTrack.style.transform = `translate3d(0, ${rightOffset.toFixed(1)}px, 0)`;
+      }
+
+      // Advance sprocket perforations in sync with the film strips
+      sprocketCols.forEach((col) => {
+        const dir = col.getAttribute('data-sprocket-dir') === '1' ? leftOffset : rightOffset;
+        col.style.transform = `translate3d(0, ${(dir % 26).toFixed(1)}px, 0)`;
+      });
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateCelluloidReels);
+        ticking = true;
+      }
+    }, { passive: true });
+
+    updateCelluloidReels();
+  </script>
+</body>
+</html>
