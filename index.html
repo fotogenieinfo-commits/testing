@@ -2,7 +2,7 @@
 <html lang="en" class="scroll-smooth">
 <head>
    <meta charset="UTF-8">
-  <title>Your Page Title</title>
+  <title>Foto Genie Studios</title>
   <link rel="icon" type="image/x-icon" href="images/favicon.ico">
    <meta charset="UTF-8">
   <title>Your Page Title</title>
@@ -46,25 +46,76 @@
   </script>
 
   <style>
-     .rope {
+    /* cursor effect*/ 
+.cf-cursor-glow,
+.cf-cursor-core,
+.cf-trail,
+.cf-spark {
   position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
-  z-index: 9999;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
 
-.rope polyline {
-  fill: none;
-  stroke: #7c5cff;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.cf-cursor-glow {
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(255,255,255,0.28), rgba(0,200,255,0.12), transparent 70%);
+  filter: blur(10px);
+  mix-blend-mode: screen;
+  z-index: 9997;
+  transition: transform 0.15s ease;
 }
 
-.rope .head {
-  fill: #7c5cff;
+.cf-cursor-core {
+  width: 16px;
+  height: 16px;
+  background: radial-gradient(circle, #ffffff 0%, #7dd3fc 45%, #22d3ee 100%);
+  box-shadow:
+    0 0 10px rgba(255,255,255,0.8),
+    0 0 20px rgba(34,211,238,0.8),
+    0 0 40px rgba(34,211,238,0.4);
+  z-index: 9998;
+  transition: transform 0.15s ease;
+}
+
+.cf-trail {
+  background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(56,189,248,0.45), rgba(168,85,247,0.15), transparent 72%);
+  filter: blur(2px);
+  mix-blend-mode: screen;
+  z-index: 9996;
+  animation: cfFadeTrail linear forwards;
+}
+
+.cf-spark {
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, #fff, #67e8f9 60%, transparent 75%);
+  box-shadow: 0 0 10px rgba(103, 232, 249, 0.9);
+  z-index: 9998;
+  animation: cfSparkFly 800ms linear forwards;
+}
+
+@keyframes cfFadeTrail {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+}
+
+@keyframes cfSparkFly {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.2);
+  }
 }
     @media (max-width: 640px) {
   header {
@@ -170,10 +221,9 @@
   </style>
 </head>
 <body class="bg-ivory text-ink overflow-x-hidden">
-   <svg class="rope" id="rope" aria-hidden="true">
-  <polyline id="ropeLine" points=""></polyline>
-  <circle id="ropeHead" class="head" r="5" cx="-20" cy="-20"></circle>
-</svg>
+  <div class="cf-cursor-glow" aria-hidden="true"></div>
+<div class="cf-cursor-core" aria-hidden="true"></div>
+   
 
   <!-- ===================================================================== -->
   <!-- 1. MINIMAL STICKY TOP BAR                                             -->
@@ -1302,61 +1352,100 @@ if (headerEl) {
         setTimeout(applyModeOne, 150);
       });
     })();
-     (function () {
-  var line = document.getElementById('ropeLine');
-  var head = document.getElementById('ropeHead');
-  if (!line || !head) return;
+    (function () {
+  const glow = document.querySelector(".cf-cursor-glow");
+  const core = document.querySelector(".cf-cursor-core");
+  if (!glow || !core) return;
 
-  var SEGMENTS = 18;
-  // Per-segment lag in ms. Frame-rate independent, so the rope has the same
-  // slack at 60Hz and 144Hz instead of snapping tight on fast displays.
-  var SEG_TAU = 38;
+  const host = document.body || document.documentElement;
+  let mouseX = window.innerWidth / 2;
+  let mouseY = window.innerHeight / 2;
+  let glowX = mouseX;
+  let glowY = mouseY;
+  let lastX = mouseX;
+  let lastY = mouseY;
+  let isPressed = false;
 
-  var pts = [];
-  for (var i = 0; i < SEGMENTS; i++) pts.push({ x: -20, y: -20 });
-
-  var targetX = -20, targetY = -20, started = false;
-
-  function moveTo(x, y) {
-    targetX = x;
-    targetY = y;
-    if (!started) {
-      // Snap the whole rope to the first point so it doesn't whip in from a corner
-      pts.forEach(function (p) { p.x = x; p.y = y; });
-      started = true;
-    }
+  function updateCursorTransforms() {
+    const coreScale = isPressed ? 1.8 : 1;
+    const glowScale = isPressed ? 1.2 : 1;
+    core.style.transform = `translate(-50%, -50%) scale(${coreScale})`;
+    glow.style.transform = `translate(-50%, -50%) scale(${glowScale})`;
   }
 
-  window.addEventListener('pointermove', function (e) { moveTo(e.clientX, e.clientY); });
-  window.addEventListener('touchmove', function (e) {
-    var t = e.touches[0];
-    if (t) moveTo(t.clientX, t.clientY);
+  function createTrail(x, y, speed = 1) {
+    const trail = document.createElement("div");
+    trail.className = "cf-trail";
+
+    const size = Math.max(18, Math.min(60, 20 + speed * 0.35));
+    trail.style.width = `${size}px`;
+    trail.style.height = `${size}px`;
+    trail.style.left = `${x}px`;
+    trail.style.top = `${y}px`;
+    trail.style.animationDuration = `${0.5 + Math.random() * 0.35}s`;
+
+    host.appendChild(trail);
+    setTimeout(() => trail.remove(), 900);
+  }
+
+  function createSpark(x, y) {
+    const spark = document.createElement("div");
+    spark.className = "cf-spark";
+    spark.style.left = `${x}px`;
+    spark.style.top = `${y}px`;
+
+    const dx = `${(Math.random() - 0.5) * 80}px`;
+    const dy = `${(Math.random() - 0.5) * 80}px`;
+    spark.style.setProperty("--dx", dx);
+    spark.style.setProperty("--dy", dy);
+
+    host.appendChild(spark);
+    setTimeout(() => spark.remove(), 850);
+  }
+
+  window.addEventListener("mousemove", (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+
+    const dx = mouseX - lastX;
+    const dy = mouseY - lastY;
+    const speed = Math.sqrt(dx * dx + dy * dy);
+
+    core.style.left = `${mouseX}px`;
+    core.style.top = `${mouseY}px`;
+
+    createTrail(mouseX, mouseY, speed);
+
+    const sparksCount = speed > 25 ? 2 : 0;
+    for (let i = 0; i < sparksCount; i++) {
+      createSpark(mouseX, mouseY);
+    }
+
+    lastX = mouseX;
+    lastY = mouseY;
   }, { passive: true });
 
-  var last = 0;
+  function animate() {
+    glowX += (mouseX - glowX) * 0.15;
+    glowY += (mouseY - glowY) * 0.15;
 
-  function tick(now) {
-    var dt = last ? Math.min(now - last, 64) : 16.7;
-    last = now;
-    var a = 1 - Math.exp(-dt / SEG_TAU);
+    glow.style.left = `${glowX}px`;
+    glow.style.top = `${glowY}px`;
 
-    // Head is pinned to the cursor; each segment chases the one before it
-    pts[0].x = targetX;
-    pts[0].y = targetY;
-    for (var i = 1; i < SEGMENTS; i++) {
-      pts[i].x += (pts[i - 1].x - pts[i].x) * a;
-      pts[i].y += (pts[i - 1].y - pts[i].y) * a;
-    }
-
-    line.setAttribute('points', pts.map(function (p) {
-      return p.x.toFixed(1) + ',' + p.y.toFixed(1);
-    }).join(' '));
-    head.setAttribute('cx', targetX);
-    head.setAttribute('cy', targetY);
-
-    requestAnimationFrame(tick);
+    requestAnimationFrame(animate);
   }
-  requestAnimationFrame(tick);
+
+  animate();
+
+  window.addEventListener("mousedown", () => {
+    isPressed = true;
+    updateCursorTransforms();
+  });
+
+  window.addEventListener("mouseup", () => {
+    isPressed = false;
+    updateCursorTransforms();
+  });
 })();
     </script>
 </body>
